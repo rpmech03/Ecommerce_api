@@ -7,8 +7,8 @@ from .serializers import (AnimalSerializer,RegisterSerializer, LoginSerializer)
 from django.db.models import Q
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated #only for those who has authenticated
+from rest_framework.authentication import TokenAuthentication #using token so here we have to import this
 
 class AnimalDetailsView(APIView):
     def get(self, request, pk):
@@ -148,6 +148,7 @@ class AnimalCreateAPI(APIView):
     def post(self, request):
         try:
             data = request.data
+            data['animal_owner'] = request.user.id
             serializer = AnimalSerializer(data = data)
             if serializer.is_valid():
                 serializer.save()

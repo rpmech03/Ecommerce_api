@@ -47,7 +47,7 @@ class AnimalSerializer(serializers.ModelSerializer):
         for ac in animal_color:
             # print(ac['animal_breed'])
             animal_color_obj = AnimalColor.objects.get(animal_color=ac['animal_color'])
-            animal.animal_breed.add(animal_color_obj)
+            animal.animal_color.add(animal_color_obj)
 
 
         return Animal.objects.first()

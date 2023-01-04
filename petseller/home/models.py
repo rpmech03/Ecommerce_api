@@ -31,7 +31,7 @@ class AnimalColor(BaseModel):
         return self.animal_color
 
 class Animal(BaseModel):
-    # animal_owner = models.ForeignKey(User, models.DO_NOTHING, models.SET_DEFAULT,models.SET_NULL)
+    animal_owner = models.ForeignKey(User, models.DO_NOTHING, models.SET_DEFAULT,models.SET_NULL)
     animal_owner = models.ForeignKey(User, models.CASCADE, related_name='animals')
     animal_category = models.ForeignKey(Category, models.CASCADE, related_name="category")
     animal_views = models.IntegerField(default=0)
@@ -44,9 +44,9 @@ class Animal(BaseModel):
     animal_color = models.ManyToManyField(AnimalColor, null=True)
 
     def save(self, *args, **kwargs):
-        uid = str(uuid.uuid4().split('-'))
-        self.animal_slug = slugify(self.animal_name) + '-' + uid[0]
-        super(Animal, self).save(*args, **kwargs)
+        uid = str(uuid.uuid4()).split('-')
+        self.animal_slug = slugify(self.animal_name)+ '-' + uid[0]
+        super(Animal,self).save(*args, **kwargs)
 
     def incrementViews(self):
         self.animal_views +=1
