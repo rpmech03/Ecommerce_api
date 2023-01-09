@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated #only for those who has authenticated
 from rest_framework.authentication import TokenAuthentication #using token so here we have to import this
+from .permission import IsPetOwnerPermission
 
 class AnimalDetailsView(APIView):
     def get(self, request, pk):
@@ -34,7 +35,7 @@ class AnimalView(APIView):
 
     def get(self, request):
         queryset =Animal.objects.all()
-        serializer = AnimalSerializer(queryset, many =True)
+       
         if request.GET.get('search'):
             search = request.GET.get('search')
             queryset = queryset.filter(
@@ -45,6 +46,7 @@ class AnimalView(APIView):
                 Q(animal_color__animal_color__icontains = search) 
             )
 
+        serializer = AnimalSerializer(queryset, many =True)
        
 
         return Response({
@@ -110,7 +112,7 @@ class LoginAPI(APIView):
             serializer = LoginSerializer(data = data)
 
             if serializer.is_valid():
-                user ,_= authenticate(username = serializer.data['username'], password = serializer.data['password'])
+                user ,_= authenticate(username = serializer.data['username'],password = serializer.data['password'])
                 
                 if user:
                     token=Token.objects.get_or_create(user=user)
@@ -143,7 +145,30 @@ class LoginAPI(APIView):
 
 class AnimalCreateAPI(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsPetOwnerPermission]
+
+    def get(self, request):
+        queryset =Animal.objects.filter(animal_owner = request.user)
+        
+
+        if request.GET.get('search'):
+            search = request.GET.get('search')
+            queryset = queryset.filter(
+                Q(name__icontains = search) |
+                Q(animal_description__icontains = search) |
+                Q(animal_gender__iexact = search) |
+                Q(animal_breed__animal_breed__icontains = search) |
+                Q(animal_color__animal_color__icontains = search) 
+            )
+
+        serializer = AnimalSerializer(queryset, many =True)
+       
+
+        return Response({
+            'status' : True,
+            'message' : 'animals fetched with GET',
+            'data': serializer.data
+        })
 
     def post(self, request):
         try:
@@ -171,3 +196,47 @@ class AnimalCreateAPI(APIView):
                 'message' : 'something went wrong',
                 'data' : {}
             })
+
+    def patch(self, request):
+        
+            try:
+                data = request.data
+
+                if data.get('id') is None:
+                    return Response({
+                        'status': False,
+                        'message':'animal id is required',
+                        'data': {}
+                    })
+
+                animal_obj = Animal.objects.filter(uuid = data.get('id'))
+                
+                if not animal_obj.exists():
+                    return Response({
+                        'status': False,
+                        'message':'Invalid animal id ',
+                        'data': {}
+                    })
+
+                animal_obj = animal_obj[0]
+                self.check_object_permissions(request, animal_obj)
+
+                serializer = AnimalSerializer(animal_obj,data = data, partial = True)
+                if serializer.is_valid():
+                    serializer.save()
+
+                    return Response({
+                            'status': True,
+                            'message':'animal updated',
+                            'data': serializer.data
+                        })
+
+            except Exception as e:
+                print(e)
+
+                return Response({
+                    'status' : False,
+                    'message' : 'something went wrong or you dont have permission to perform this action',
+                    'data' : {}
+                })
+

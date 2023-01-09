@@ -93,3 +93,24 @@ class LoginSerializer(serializers.Serializer):
             if not user.exists():
                 raise serializers.ValidationError('username does not exist')
         return data
+
+def update(self, instance, data):
+    if 'animal_breed' in data:
+        animal_breed = data.pop('animal_breed')
+        instance.animal_breed.clear()
+        for ab in animal_breed:
+        # print(ab['animal_breed'])
+            animal_breed_obj = AnimalBreed.objects.get(animal_breed=ab['animal_breed'])
+            instance.animal_breed.add(animal_breed_obj)
+
+    if 'animal_color' in data:
+        animal_color = data.pop('animal_color')
+
+    instance.animal_name = data.get('animal_name', instance.animal_name)
+    instance.animal_description = data.get('animal_description', instance.animal_description)
+    instance.animal_gender = data.get('animal_gender', instance.animal_gender)
+
+    instance.save()
+
+    return instance
+
